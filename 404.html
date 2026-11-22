@@ -81,12 +81,12 @@ body.nxo-ready{opacity:1;transition:opacity .25s ease}
 <header>
   <div class="container">
     <nav class="nav-shell">
-      <a class="brand" href="./index.html">
-        <span class="brand-mark"><img src="./logo.png" alt="Next Origin logo"></span>
+      <a class="brand" href="/">
+        <span class="brand-mark"><img src="/logo.png" alt="Next Origin logo"></span>
         <span>NEXT ORIGIN<small>DIGITAL STUDIO</small></span>
       </a>
       <div class="nav-actions">
-        <a class="back-btn" href="./index.html">← Home</a>
+        <a class="back-btn" href="/">← Home</a>
       </div>
     </nav>
   </div>
@@ -100,17 +100,16 @@ body.nxo-ready{opacity:1;transition:opacity .25s ease}
     <p class="err-text">The file or route you requested could not be found on Next Origin. It may have been moved, renamed, or is restricted.</p>
     <div class="err-path" id="missingPathLabel">/unknown</div>
     <div class="err-actions">
-      <a class="button" href="./index.html">Return to Home ↗</a>
-      <a class="button glass-secondary" href="./index.html#apps">Browse Apps</a>
+      <a class="button" href="/">Return to Home ↗</a>
+      <a class="button glass-secondary" href="/#apps">Browse Apps</a>
     </div>
   </div>
 </main>
 
 <script>
 document.getElementById('missingPathLabel').textContent = window.location.pathname;
-</script>
-<script>
-(async function bootNXO() {
+
+(async function boot404Style() {
   const ready = () => {
     document.body.classList.remove('nxo-pending');
     document.body.classList.add('nxo-ready');
@@ -128,7 +127,7 @@ document.getElementById('missingPathLabel').textContent = window.location.pathna
 
   try {
     const headers = { 'X-NXO-Client': '1' };
-    const routerRes = await fetch('./router.txt', { cache: 'default', headers });
+    const routerRes = await fetch('/router.txt', { cache: 'default', headers });
     if (!routerRes.ok) throw new Error('Router unavailable');
     const manifest = await routerRes.text();
     const map = {};
@@ -138,34 +137,16 @@ document.getElementById('missingPathLabel').textContent = window.location.pathna
     });
 
     const key = Number(map.k || 73);
-    const [cssEncoded, jsEncoded] = await Promise.all([
-      map.m_a ? fetch('./' + map.m_a, { cache: 'default', headers }).then((r) => r.ok ? r.text() : '') : '',
-      (map.m_b && document.body.dataset.pageType !== '404')
-        ? fetch('./' + map.m_b, { cache: 'default', headers }).then((r) => r.ok ? r.text() : '')
-        : '',
-      document.body.dataset.pageType !== '404'
-        ? fetch('./app_list.nxo', { cache: 'default' }).catch(() => null)
-        : Promise.resolve()
-    ]);
-
-    if (cssEncoded) {
-      const styleEl = document.createElement('style');
-      styleEl.textContent = decodeChunk(cssEncoded, key);
-      document.head.appendChild(styleEl);
-    }
-
-    if (jsEncoded) {
-      const jsSource = decodeChunk(jsEncoded, key);
-      const blob = new Blob([jsSource], { type: 'application/javascript' });
-      const url = URL.createObjectURL(blob);
-      const s = document.createElement('script');
-      s.src = url;
-      s.onload = () => URL.revokeObjectURL(url);
-      s.onerror = () => URL.revokeObjectURL(url);
-      document.body.appendChild(s);
+    if (map.m_a) {
+      const cssRes = await fetch('/' + map.m_a.replace(/^\/+/, ''), { cache: 'default', headers });
+      if (cssRes.ok) {
+        const styleEl = document.createElement('style');
+        styleEl.textContent = decodeChunk(await cssRes.text(), key);
+        document.head.appendChild(styleEl);
+      }
     }
   } catch (e) {
-    // Fallback gracefully
+    // Keep base fallback styling
   } finally {
     clearTimeout(failsafe);
     ready();

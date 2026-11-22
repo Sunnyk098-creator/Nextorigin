@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#06050a">
+<meta name="robots" content="noindex">
+<title>404 — Page Not Found | Next Origin</title>
+<style>html,body{margin:0;background:#06050a;color:#f7f5fc;font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif}
+body.nxo-pending{opacity:0}
+body.nxo-ready{opacity:1;transition:opacity .25s ease}
+.err-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 112px 24px 64px;
+}
+.err-card {
+  width: min(640px, 100%);
+  padding: 52px 44px;
+  border-radius: 28px;
+  text-align: center;
+}
+.err-code {
+  font-size: clamp(72px, 14vw, 124px);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+  margin: 14px 0 12px;
+  background: linear-gradient(135deg, #ffffff 15%, #c89eff 85%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.err-title {
+  font-size: clamp(22px, 3.2vw, 30px);
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  margin: 0 0 12px;
+  color: #f7f5fc;
+}
+.err-text {
+  font-size: 14px;
+  color: #a199b2;
+  line-height: 1.8;
+  max-width: 440px;
+  margin: 0 auto 28px;
+}
+.err-path {
+  display: inline-block;
+  padding: 6px 13px;
+  margin-bottom: 28px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #ded9ea;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.err-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+@media (max-width: 560px) {
+  .err-card { padding: 38px 24px; }
+}
+</style>
+</head>
+<body class="nxo-pending" data-page-type="404">
+<div class="ambient-field" aria-hidden="true">
+  <div class="ambient-blob top"></div>
+  <div class="ambient-blob bottom"></div>
+</div>
+
+<header>
+  <div class="container">
+    <nav class="nav-shell">
+      <a class="brand" href="./index.html">
+        <span class="brand-mark"><img src="./logo.png" alt="Next Origin logo"></span>
+        <span>NEXT ORIGIN<small>DIGITAL STUDIO</small></span>
+      </a>
+      <div class="nav-actions">
+        <a class="back-btn" href="./index.html">← Home</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main class="err-wrap">
+  <div class="err-card liquid-glass">
+    <div class="eyebrow">Error 404 · Route Not Found</div>
+    <div class="err-code">404</div>
+    <h1 class="err-title">This page does not exist.</h1>
+    <p class="err-text">The file or route you requested could not be found on Next Origin. It may have been moved, renamed, or is restricted.</p>
+    <div class="err-path" id="missingPathLabel">/unknown</div>
+    <div class="err-actions">
+      <a class="button" href="./index.html">Return to Home ↗</a>
+      <a class="button glass-secondary" href="./index.html#apps">Browse Apps</a>
+    </div>
+  </div>
+</main>
+
+<script>
+document.getElementById('missingPathLabel').textContent = window.location.pathname;
+</script>
+<script>
+(async function bootNXO() {
+  const ready = () => {
+    document.body.classList.remove('nxo-pending');
+    document.body.classList.add('nxo-ready');
+  };
+  const failsafe = setTimeout(ready, 1500);
+
+  function decodeChunk(b64, key) {
+    const bin = atob(b64.trim());
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) {
+      bytes[i] = bin.charCodeAt(i) ^ key;
+    }
+    return new TextDecoder('utf-8').decode(bytes);
+  }
+
+  try {
+    const headers = { 'X-NXO-Client': '1' };
+    const routerRes = await fetch('./router.txt', { cache: 'default', headers });
+    if (!routerRes.ok) throw new Error('Router unavailable');
+    const manifest = await routerRes.text();
+    const map = {};
+    manifest.split(/\r?\n/).forEach((line) => {
+      const idx = line.indexOf('=');
+      if (idx > 0) map[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
+    });
+
+    const key = Number(map.k || 73);
+    const [cssEncoded, jsEncoded] = await Promise.all([
+      map.m_a ? fetch('./' + map.m_a, { cache: 'default', headers }).then((r) => r.ok ? r.text() : '') : '',
+      (map.m_b && document.body.dataset.pageType !== '404')
+        ? fetch('./' + map.m_b, { cache: 'default', headers }).then((r) => r.ok ? r.text() : '')
+        : '',
+      document.body.dataset.pageType !== '404'
+        ? fetch('./app_list.nxo', { cache: 'default' }).catch(() => null)
+        : Promise.resolve()
+    ]);
+
+    if (cssEncoded) {
+      const styleEl = document.createElement('style');
+      styleEl.textContent = decodeChunk(cssEncoded, key);
+      document.head.appendChild(styleEl);
+    }
+
+    if (jsEncoded) {
+      const jsSource = decodeChunk(jsEncoded, key);
+      const blob = new Blob([jsSource], { type: 'application/javascript' });
+      const url = URL.createObjectURL(blob);
+      const s = document.createElement('script');
+      s.src = url;
+      s.onload = () => URL.revokeObjectURL(url);
+      s.onerror = () => URL.revokeObjectURL(url);
+      document.body.appendChild(s);
+    }
+  } catch (e) {
+    // Fallback gracefully
+  } finally {
+    clearTimeout(failsafe);
+    ready();
+  }
+})();
+</script>
+</body>
+</html>

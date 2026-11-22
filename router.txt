@@ -1,0 +1,3 @@
+m_a=_core/v9x/nxo_8f4c2a91e7b3.dat
+m_b=_core/v9x/nxo_3d9e7b10c5f4.dat
+k=73

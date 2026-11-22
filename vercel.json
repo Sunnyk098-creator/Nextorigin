@@ -1,0 +1,27 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "routes": [
+    {
+      "src": "^/(_core|Core|router\\.txt)(/.*)?$",
+      "missing": [
+        {
+          "type": "header",
+          "key": "x-nxo-client",
+          "value": "1"
+        }
+      ],
+      "status": 404,
+      "dest": "/404.html"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "status": 404,
+      "dest": "/404.html"
+    }
+  ]
+}
